@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>{{ $json.nom_entreprise }} | {{ $json.metier }} à {{ $json.ville }}</title>
+<meta name="description" content="{{ $json.nom_entreprise }} est votre artisan de référence pour vos projets de {{ $json.metier }} à {{ $json.ville }} et ses environs.">
+
+<!-- Fonts Google -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600&family=Zilla+Slab:wght@600;700&display=swap" rel="stylesheet">
+
+<!-- GSAP & ScrollTrigger -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+<style>
+  :root {
+    --bg-dark: #0A0F12;
+    --border-light: rgba(255, 255, 255, 0.14);
+    --border-glow: rgba(56, 189, 248, 0.35);
+    --primary-cyan: #38BDF8;
+    --accent-orange: #FF6B2B;
+    --accent-orange-hover: #E05316;
+    --text-main: #FFFFFF;
+    --text-muted: #CBD5E1;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .mono { font-family: 'Roboto Mono', monospace; }
+  .serif { font-family: 'Zilla Slab', serif; }
+
+  /* ACCESSIBILITÉ */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--primary-cyan);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .step-card,
+    .step-card .step-tag,
+    .step-card h2,
+    .step-card p,
+    .feature-box,
+    .service-icon,
+    .service-row,
+    .header-cta {
+      transition: none !important;
+    }
+  }
+
+  /* ÉCRAN DE CHARGEMENT */
+  #loader {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: var(--bg-dark);
+    z-index: 99999;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto;
+  }
+  #loader.is-hidden {
+    opacity: 0;
+    pointer-events: none !important;
+    display: none !important;
+  }
+  .loader-brand {
+    font-family: 'Zilla Slab', serif;
+    font-size: 2.2rem; font-weight: 700;
+    margin-bottom: 24px; letter-spacing: -0.02em;
+    text-align: center;
+    background: linear-gradient(135deg, #FFFFFF 30%, var(--primary-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .progress-bar-bg {
+    width: 280px; height: 5px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px; overflow: hidden;
+    margin-bottom: 14px;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .progress-bar-fill {
+    width: 0%; height: 100%;
+    background: linear-gradient(90deg, var(--primary-cyan), var(--accent-orange));
+    border-radius: 10px;
+    transition: width 0.15s ease-out;
+  }
+  .loader-status { font-size: 0.82rem; color: var(--text-muted); letter-spacing: 0.05em; }
+
+  /* HEADER FLOTTANT */
+  header {
+    position: fixed; top: 0; left: 0; width: 100%;
+    z-index: 100;
+    padding: 16px 28px;
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(to bottom, rgba(10,15,18,0.85) 0%, rgba(10,15,18,0) 100%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .logo {
+    font-family: 'Zilla Slab', serif; font-weight: 700; font-size: 1.25rem;
+    display: flex; align-items: center; gap: 12px;
+    color: #FFFFFF;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  }
+  .brand-badge {
+    width: 38px; height: 38px;
+    border-radius: 6px;
+    border: 1px solid var(--border-light);
+    background: rgba(255, 255, 255, 0.05);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--primary-cyan);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .header-cta {
+    background: var(--accent-orange); color: #fff;
+    padding: 11px 20px; font-weight: 600; font-size: 0.85rem;
+    text-decoration: none; border-radius: 4px; 
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 43, 0.35);
+  }
+  .header-cta:hover { 
+    background: var(--accent-orange-hover); 
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255, 107, 43, 0.5);
+  }
+
+  /* SECTION ANIMATION 3D SCROLL */
+  .animation-container {
+    position: relative;
+    height: 450vh;
+  }
+  .sticky-wrapper {
+    position: sticky; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+  }
+  
+  canvas#canvas-3d {
+    position: absolute; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    display: block;
+    z-index: 1;
+  }
+
+  .vignette-overlay {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 2;
+    background: radial-gradient(circle at 50% 30%, transparent 55%, rgba(10, 15, 18, 0.35) 100%);
+  }
+
+  /* OVERLAYS TEXTES */
+  .text-overlay {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    display: flex; 
+    align-items: flex-end; 
+    justify-content: center;
+    padding: 0 8vw 7vh;
+    z-index: 3;
+  }
+
+  .step-card {
+    position: relative;
+    max-width: 640px;
+    width: 100%;
+    text-align: center;
+    opacity: 0;
+    filter: blur(6px);
+    transition: opacity 1.1s cubic-bezier(0.4, 0, 0.2, 1),
+                filter 1.1s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+  }
+  .step-card.active {
+    opacity: 1;
+    filter: blur(0px);
+    pointer-events: auto;
+  }
+
+  .step-card .step-tag,
+  .step-card h2,
+  .step-card p {
+    opacity: 0;
+    transition: opacity 0.9s ease;
+  }
+  .step-card .step-tag { transition-delay: 0.05s; }
+  .step-card h2 { transition-delay: 0.22s; }
+  .step-card p { transition-delay: 0.38s; }
+  .step-card.active .step-tag,
+  .step-card.active h2,
+  .step-card.active p { opacity: 1; }
+
+  .step-tag {
+    font-size: 0.78rem; 
+    color: var(--primary-cyan);
+    letter-spacing: 0.12em; 
+    text-transform: uppercase;
+    margin-bottom: 10px; 
+    display: inline-block;
+    font-weight: 600;
+  }
+  .step-card h2 {
+    font-family: 'Zilla Slab', serif; 
+    font-size: 1.85rem;
+    margin-bottom: 12px; 
+    line-height: 1.2;
+    color: #FFFFFF;
+  }
+  .step-card p {
+    color: var(--text-muted); 
+    font-size: 0.95rem; 
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* SECTIONS DU SITE */
+  section { padding: 90px 24px; border-top: 1px solid var(--border-light); }
+  .section-content { position: relative; z-index: 10; background: var(--bg-dark); }
+  .content-wrap { max-width: 1100px; margin: 0 auto; }
+  
+  /* SERVICES */
+  .services-list {
+    margin-top: 44px;
+    border-top: 1px solid var(--border-light);
+  }
+  .service-row {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 28px;
+    align-items: start;
+    padding: 38px 4px;
+    border-bottom: 1px solid var(--border-light);
+    transition: background-color 0.3s ease;
+  }
+  .service-row:hover { background: rgba(255,255,255,0.018); }
+
+  .service-icon {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    border: 1px solid var(--border-light);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--primary-cyan);
+    flex-shrink: 0;
+    transition: border-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
+  }
+  .service-row:hover .service-icon {
+    border-color: var(--accent-orange);
+    color: var(--accent-orange);
+    transform: translateY(-2px);
+  }
+  .service-icon svg { width: 26px; height: 26px; }
+
+  .service-tag {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-orange);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 10px;
+  }
+  .service-copy h3 {
+    font-family: 'Zilla Slab', serif;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: var(--text-main);
+  }
+  .service-copy p {
+    color: var(--text-muted);
+    font-size: 0.94rem;
+    line-height: 1.65;
+    max-width: 560px;
+  }
+
+  @media (max-width: 640px) {
+    .service-row { grid-template-columns: 48px 1fr; gap: 18px; padding: 28px 2px; }
+    .service-icon { width: 44px; height: 44px; }
+    .service-icon svg { width: 20px; height: 20px; }
+    .service-copy h3 { font-size: 1.25rem; }
+  }
+
+  /* ABOUT & GARANTIES */
+  .about-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 48px; align-items: center; }
+  .trust-card {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border-light);
+    padding: 32px; border-radius: 8px;
+  }
+  .trust-item { margin-bottom: 22px; }
+  .trust-item:last-child { margin-bottom: 0; }
+  .trust-item h4 { font-size: 1.08rem; color: var(--text-main); margin-bottom: 6px; }
+  .trust-item p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+  
+  /* REVIEWS */
+  .reviews-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 40px; }
+  .review-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid var(--border-light);
+    padding: 32px; border-radius: 8px;
+  }
+  .review-stars { color: var(--accent-orange); margin-bottom: 16px; font-size: 1.1rem; }
+  .review-text { font-style: italic; color: var(--text-main); margin-bottom: 20px; font-size: 0.95rem; line-height: 1.6; }
+  .review-author { font-weight: 600; color: var(--text-muted); font-size: 0.88rem; }
+
+  /* CONTACT */
+  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  .contact-info {
+    background: rgba(255,255,255,0.025);
+    padding: 40px 32px; border: 1px solid var(--border-light); border-radius: 8px;
+  }
+  .contact-info h3 { font-size: 1.45rem; margin-bottom: 12px; }
+  .contact-details { list-style: none; margin: 24px 0; }
+  .contact-details li { padding: 12px 0; border-bottom: 1px dashed var(--border-light); font-size: 0.92rem; }
+  
+  .contact-form {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 48px 40px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 24px 40px rgba(0, 0, 0, 0.2);
+  }
+  .form-group { margin-bottom: 24px; position: relative; }
+  .form-group label {
+    display: block; font-size: 0.75rem; font-family: 'Roboto Mono', monospace;
+    margin-bottom: 10px; color: var(--primary-cyan);
+    text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;
+  }
+  .form-group input, .form-group textarea {
+    width: 100%; padding: 16px 20px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 1rem;
+    border-radius: 8px; transition: all 0.3s ease;
+  }
+  .form-group input::placeholder, .form-group textarea::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+  }
+  .form-group input:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-cyan);
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
+  }
+  
+  .form-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .btn-submit {
+    width: 100%; padding: 16px;
+    border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem;
+    cursor: pointer; transition: all 0.3s ease;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  
+  .btn-classic {
+    background: rgba(255, 255, 255, 0.05); color: #FFF;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  .btn-classic:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+  }
+  
+  .btn-whatsapp {
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); color: #FFF;
+    box-shadow: 0 8px 20px rgba(37, 211, 102, 0.25);
+  }
+  .btn-whatsapp:hover {
+    background: linear-gradient(135deg, #1EBE5A 0%, #0F7569 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(37, 211, 102, 0.4);
+  }
+
+  @media (max-width: 640px) {
+    .contact-form { padding: 32px 24px; }
+    .form-actions { grid-template-columns: 1fr; }
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border-light);
+    padding: 56px 24px 36px;
+    background: var(--bg-dark);
+    color: var(--text-muted);
+    font-size: 0.88rem;
+  }
+  .foot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 36px; max-width: 1100px; margin: 0 auto 36px; }
+  .foot-grid h3 { color: var(--text-main); margin-bottom: 14px; font-size: 1.2rem; }
+  .foot-contact-item { margin-bottom: 10px; }
+  .foot-bottom { text-align: center; padding-top: 28px; border-top: 1px solid var(--border-light); }
+
+  @media (max-width: 768px) {
+    header { padding: 12px 18px; }
+    .logo { font-size: 1.05rem; }
+    .header-cta { padding: 8px 14px; font-size: 0.78rem; }
+    .text-overlay { padding: 0 20px 5vh; }
+    .step-card h2 { font-size: 1.45rem; margin-bottom: 8px; }
+    .step-card p { font-size: 0.86rem; line-height: 1.45; }
+    .about-grid, .contact-grid { grid-template-columns: 1fr; gap: 32px; }
+    section { padding: 60px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ÉCRAN DE CHARGEMENT -->
+<div id="loader">
+  <div class="loader-brand">{{ $json.nom_entreprise }}</div>
+  <div class="progress-bar-bg">
+    <div class="progress-bar-fill" id="progress-fill"></div>
+  </div>
+  <div class="loader-status mono" id="loader-text">Chargement des visuels... 0%</div>
+</div>
+
+<!-- HEADER FLOTTANT -->
+<header>
+  <div class="logo">
+    <span class="brand-badge">
+      {{ $json.icone_header || '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>' }}
+    </span>
+    <span>{{ $json.nom_entreprise }}</span>
+  </div>
+  <a href="#contact" class="header-cta">Demander un devis</a>
+</header>
+
+<!-- CONTENEUR ANIMATION SCROLL 3D -->
+<div class="animation-container" id="scroll-trigger-area">
+  <div class="sticky-wrapper">
+    <canvas id="canvas-3d"></canvas>
+    <div class="vignette-overlay"></div>
+
+    <div class="text-overlay">
+      <div class="step-card active" id="card-1">
+        <span class="step-tag mono">01 / Savoir-Faire</span>
+        <h2>{{ $json.metier }} à {{ $json.ville }}</h2>
+        <p>{{ $json.texte_hero }}</p>
+      </div>
+    </div>
+
+    <div class="text-overlay">
+      <div class="step-card" id="card-2">
+        <span class="step-tag mono">02 / Expertise</span>
+        <h2>{{ $json.service_1_titre }}</h2>
+        <p>{{ $json.service_1_desc }}</p>
+      </div>
+    </div>
+
+    <div class="text-overlay">
+      <div class="step-card" id="card-3">
+        <span class="step-tag mono">03 / Exigence</span>
+        <h2>{{ $json.service_2_titre }}</h2>
+        <p>{{ $json.service_2_desc }}</p>
+      </div>
+    </div>
+
+    <div class="text-overlay">
+      <div class="step-card" id="card-4">
+        <span class="step-tag mono">04 / Engagement</span>
+        <h2>{{ $json.service_3_titre }}</h2>
+        <p>{{ $json.service_3_desc }}</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SERVICES DETAILLES -->
+<section class="section-content" id="services">
+  <div class="content-wrap">
+    <span class="mono" style="color:var(--accent-orange); text-transform:uppercase; font-weight:600; letter-spacing: 0.05em;">Nos prestations</span>
+    <h2 class="serif" style="font-size:2.4rem; margin-top:8px;">Un niveau d'exigence sans concession</h2>
+
+    <div class="services-list">
+      <article class="service-row">
+        <div class="service-icon" aria-hidden="true">
+          {{ $json.icone_service_1 }}
+        </div>
+        <div class="service-copy">
+          <span class="service-tag mono">{{ $json.metier }}</span>
+          <h3 class="serif">{{ $json.service_1_titre }}</h3>
+          <p>{{ $json.service_1_desc }}</p>
+        </div>
+      </article>
+
+      <article class="service-row">
+        <div class="service-icon" aria-hidden="true">
+          {{ $json.icone_service_2 }}
+        </div>
+        <div class="service-copy">
+          <span class="service-tag mono">{{ $json.metier }}</span>
+          <h3 class="serif">{{ $json.service_2_titre }}</h3>
+          <p>{{ $json.service_2_desc }}</p>
+        </div>
+      </article>
+
+      <article class="service-row">
+        <div class="service-icon" aria-hidden="true">
+          {{ $json.icone_service_3 }}
+        </div>
+        <div class="service-copy">
+          <span class="service-tag mono">{{ $json.metier }}</span>
+          <h3 class="serif">{{ $json.service_3_titre }}</h3>
+          <p>{{ $json.service_3_desc }}</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- A PROPOS ET ENGAGEMENTS -->
+<section class="section-content">
+  <div class="content-wrap about-grid">
+    <div>
+      <span class="mono" style="color:var(--accent-orange); text-transform:uppercase; font-weight:600;">Notre Entreprise</span>
+      <h2 class="serif" style="font-size:2.4rem; margin-top:8px; margin-bottom:18px;">{{ $json.nom_entreprise }}</h2>
+      <p style="color:var(--text-muted); font-size:0.98rem; line-height:1.65;">{{ $json.texte_a_propos }}</p>
+    </div>
+    
+    <div class="trust-card">
+      <div class="trust-item">
+        <h4 class="serif">📍 Ancrage Local à {{ $json.ville }}</h4>
+        <p>Intervention rapide et maîtrise parfaite du secteur pour tous vos chantiers.</p>
+      </div>
+      <div class="trust-item">
+        <h4 class="serif">🛡️ Garanties & Normes</h4>
+        <p>Prestations assurées et réalisées dans le respect strict des normes de sécurité.</p>
+      </div>
+      <div class="trust-item">
+        <h4 class="serif">📋 Étude & Devis Précis</h4>
+        <p>Transparence complète, conseils techniques et devis personnalisé sans frais cachés.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TEMOIGNAGES -->
+<section class="section-content">
+  <div class="content-wrap">
+    <span class="mono" style="color:var(--accent-orange); text-transform:uppercase; font-weight:600;">Témoignages</span>
+    <h2 class="serif" style="font-size:2.4rem; margin-top:8px;">La satisfaction de nos clients</h2>
+
+    <div class="reviews-grid">
+      <div class="review-card">
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">"{{ $json.avis_1_texte }}"</p>
+        <div class="review-author">— {{ $json.avis_1_auteur }}</div>
+      </div>
+      <div class="review-card">
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">"{{ $json.avis_2_texte }}"</p>
+        <div class="review-author">— {{ $json.avis_2_auteur }}</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION CONTACT -->
+<section class="section-content" id="contact">
+  <div class="content-wrap contact-grid">
+    <div class="contact-info">
+      <h3 class="serif">Contactez-nous</h3>
+      <p style="color:var(--text-muted); font-size:0.92rem; margin-top:6px;">Un projet à réaliser ou besoin d'une étude personnalisée ? Écrivez-nous ou contactez notre équipe directement.</p>
+      
+      <ul class="contact-details">
+        <li>Entreprise : <strong>{{ $json.nom_entreprise }}</strong></li>
+        <li>Activité : <strong>{{ $json.metier }}</strong></li>
+        <li>Localisation : <strong>{{ $json.ville }} et ses environs</strong></li>
+        <li>Téléphone direct : <strong>{{ $json.telephone }}</strong></li>
+      </ul>
+    </div>
+
+    <!-- FORMULAIRE DE CONTACT -->
+    <div class="contact-form">
+      <form id="contact-form-dual">
+        <div class="form-group">
+          <label for="lead-nom">VOTRE NOM</label>
+          <input type="text" id="lead-nom" placeholder="Jean Dupont" required>
+        </div>
+        <div class="form-group">
+          <label for="lead-tel">VOTRE TÉLÉPHONE</label>
+          <input type="text" id="lead-tel" placeholder="06 XX XX XX XX" required>
+        </div>
+        <div class="form-group">
+          <label for="lead-msg">VOTRE PROJET</label>
+          <textarea id="lead-msg" rows="4" placeholder="Décrivez votre besoin en quelques mots..." required></textarea>
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" class="btn-submit btn-classic" id="btn-email" onclick="submitClassic(this)">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            Envoyer le message
+          </button>
+          
+          <button type="button" class="btn-submit btn-whatsapp" id="btn-wa" onclick="submitWA(this)">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133-.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+          </button>
+        </div>
+      </form>
+      
+      <div id="success-msg" style="display: none; color: #4ade80; text-align: center; margin-top: 30px; font-weight: 600;">
+        ✅ Votre message a bien été envoyé. Nous vous recontactons dans les plus brefs délais !
+      </div>
+    </div>
+    
+    <script>
+      const WEBHOOK_URL = 'https://overeater-hastiness-unbolted.ngrok-free.dev/webhook-test/leads-client/';
+
+      function getFormData() {
+        const form = document.getElementById('contact-form-dual');
+        if (!form.reportValidity()) return null; 
+
+        return {
+          nom: document.getElementById('lead-nom').value,
+          telephone: document.getElementById('lead-tel').value,
+          message: document.getElementById('lead-msg').value,
+          artisan_cible: "{{ $json.nom_entreprise }}",
+          ville_cible: "{{ $json.ville }}",
+          source: "Site Web 3D"
+        };
+      }
+
+      function submitClassic(btn) {
+        const data = getFormData();
+        if (!data) return;
+        data.methode = "Formulaire Web";
+
+        btn.innerText = "⏳ Envoi en cours...";
+        btn.style.pointerEvents = "none";
+        document.getElementById('btn-wa').style.display = "none";
+
+        fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        })
+        .then(() => {
+          document.getElementById('contact-form-dual').style.display = 'none';
+          document.getElementById('success-msg').style.display = 'block';
+        })
+        .catch(() => {
+          btn.innerText = "❌ Erreur de connexion";
+          btn.style.pointerEvents = "auto";
+          document.getElementById('btn-wa').style.display = "flex";
+        });
+      }
+
+      function submitWA(btn) {
+        const data = getFormData();
+        if (!data) return;
+        data.methode = "WhatsApp";
+
+        btn.innerText = "⏳ Redirection...";
+        btn.style.pointerEvents = "none";
+        document.getElementById('btn-email').style.pointerEvents = "none";
+
+        fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        }).catch(() => console.log("Tracking ignoré"));
+
+        setTimeout(() => {
+          let rawTel = "{{ $json.telephone }}";
+          let telClient = rawTel.replace(/\D/g, '');
+          if (telClient.startsWith('0')) {
+            telClient = '33' + telClient.substring(1);
+          }
+          const text = encodeURIComponent(`Bonjour {{ $json.nom_entreprise }},\nJe suis ${data.nom} (Tél: ${data.telephone}).\n\nVoici ma demande :\n${data.message}`);
+          
+          window.open(`https://wa.me/${telClient}?text=${text}`, '_blank');
+
+          btn.innerHTML = `<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133-.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> WhatsApp`;
+          btn.style.pointerEvents = "auto";
+          document.getElementById('btn-email').style.pointerEvents = "auto";
+        }, 500);
+      }
+    </script>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-grid">
+    <div>
+      <h3 class="serif">{{ $json.nom_entreprise }}</h3>
+      <p style="margin-top:6px; line-height: 1.5;">Votre artisan spécialiste en {{ $json.metier }} à {{ $json.ville }} et ses alentours. Contactez-nous pour toute étude de projet.</p>
+    </div>
+    <div>
+      <h3 class="serif">Coordonnées</h3>
+      <div class="foot-contact-item">📍 Localisation : <strong>{{ $json.ville }}</strong></div>
+      <div class="foot-contact-item">📞 Téléphone : <strong>{{ $json.telephone }}</strong></div>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    &copy; <script>document.write(new Date().getFullYear())</script> {{ $json.nom_entreprise }} — Tous droits réservés.
+  </div>
+</footer>
+
+<!-- SCRIPT MOTEUR GSAP & CANVAS -->
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    gsap.registerPlugin(ScrollTrigger);
+
+    const frameCount = parseInt("{{ $json.frameCount_3d }}") || 240;
+    
+    const checkIsMobile = () => {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+    };
+
+    const isMobile = checkIsMobile();
+    
+    const baseUrl = isMobile 
+      ? "{{ $json.url_3d_mobile }}" 
+      : "{{ $json.url_3d_desktop }}";
+
+    const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart(4, '0')}.webp`;
+
+    const canvas = document.getElementById("canvas-3d");
+    const context = canvas.getContext("2d", { alpha: false });
+    
+    const sequence = { frame: 0 };
+    const images = [];
+    let loadedImagesCount = 0;
+    let isFinished = false;
+
+    let viewportWidth = window.innerWidth;
+    let viewportHeight = window.innerHeight;
+
+    const TEXT_ZONE_RATIO = 0.15; 
+    const TEXT_ZONE_FEATHER = 0.08; 
+
+    function resizeCanvas() {
+      const dpr = isMobile ? Math.min(window.devicePixelRatio || 1, 1.5) : Math.min(window.devicePixelRatio || 1, 2);
+      
+      viewportWidth = window.innerWidth;
+      viewportHeight = window.innerHeight;
+
+      canvas.width = Math.round(viewportWidth * dpr);
+      canvas.height = Math.round(viewportHeight * dpr);
+      
+      canvas.style.width = `${viewportWidth}px`;
+      canvas.style.height = `${viewportHeight}px`;
+      
+      render();
+    }
+    
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      if (Math.abs(window.innerWidth - viewportWidth) < 20) return;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        resizeCanvas();
+      }, 200);
+    });
+
+    function render() {
+      const img = images[sequence.frame];
+      if (!img || !img.complete || img.naturalWidth === 0) return;
+
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = isMobile ? "medium" : "high";
+
+      const imgRatio = img.naturalWidth / img.naturalHeight;
+      const canvasRatio = canvas.width / canvas.height;
+
+      let renderWidth, renderHeight;
+
+      if (isMobile) {
+        if (canvasRatio > imgRatio) {
+          renderHeight = canvas.height * 0.88;
+          renderWidth = renderHeight * imgRatio;
+        } else {
+          renderWidth = canvas.width * 0.95;
+          renderHeight = renderWidth / imgRatio;
+        }
+      } else {
+        if (canvasRatio > imgRatio) {
+          renderWidth = canvas.width;
+          renderHeight = canvas.width / imgRatio;
+        } else {
+          renderHeight = canvas.height;
+          renderWidth = canvas.height * imgRatio;
+        }
+      }
+
+      const x = (canvas.width - renderWidth) / 2;
+      const y = (canvas.height - renderHeight) / 2;
+
+      context.drawImage(img, x, y, renderWidth, renderHeight);
+
+      const zoneStart = canvas.height * (1 - TEXT_ZONE_RATIO - TEXT_ZONE_FEATHER);
+      const zoneFullOpaque = canvas.height * (1 - TEXT_ZONE_RATIO);
+
+      const grad = context.createLinearGradient(0, zoneStart, 0, canvas.height);
+      grad.addColorStop(0, 'rgba(10,15,18,0)');
+      grad.addColorStop((zoneFullOpaque - zoneStart) / (canvas.height - zoneStart), 'rgba(10,15,18,0.92)');
+      grad.addColorStop(1, 'rgba(10,15,18,0.97)');
+
+      context.fillStyle = grad;
+      context.fillRect(0, zoneStart, canvas.width, canvas.height - zoneStart);
+    }
+
+    function handleImageLoad() {
+      if (isFinished) return;
+      loadedImagesCount++;
+      const percent = Math.min(100, Math.round((loadedImagesCount / frameCount) * 100));
+      
+      const fill = document.getElementById('progress-fill');
+      const text = document.getElementById('loader-text');
+      if (fill) fill.style.width = `${percent}%`;
+      if (text) text.innerText = `Chargement 3D... ${percent}%`;
+
+      if (loadedImagesCount >= frameCount) {
+        isFinished = true;
+        dismissLoader();
+      }
+    }
+
+    function dismissLoader() {
+      const loader = document.getElementById('loader');
+      if (loader) loader.classList.add('is-hidden');
+      initScrollAnimation();
+    }
+
+    for (let i = 0; i < frameCount; i++) {
+      const img = new Image();
+      img.onload = handleImageLoad;
+      img.onerror = handleImageLoad;
+      img.src = currentFrame(i);
+      images.push(img);
+    }
+
+    setTimeout(() => {
+      if (!isFinished) {
+        isFinished = true;
+        dismissLoader();
+      }
+    }, 6000);
+
+    function initScrollAnimation() {
+      resizeCanvas();
+
+      gsap.to(sequence, {
+        frame: frameCount - 1,
+        snap: "frame",
+        ease: "none",
+        scrollTrigger: {
+          trigger: "#scroll-trigger-area",
+          start: "top top",
+          end: "bottom bottom",
+          scrub: isMobile ? 0.1 : 0.25, 
+          onUpdate: () => {
+            render();
+            updateTextCards(Math.round(sequence.frame));
+          }
+        }
+      });
+      
+      ScrollTrigger.refresh();
+    }
+
+    function updateTextCards(frame) {
+      const c1 = document.getElementById('card-1');
+      const c2 = document.getElementById('card-2');
+      const c3 = document.getElementById('card-3');
+      const c4 = document.getElementById('card-4');
+
+      const step = frameCount / 4;
+
+      if(c1) c1.classList.toggle('active', frame >= 0 && frame < step);
+      if(c2) c2.classList.toggle('active', frame >= step && frame < step * 2);
+      if(c3) c3.classList.toggle('active', frame >= step * 2 && frame < step * 3);
+      if(c4) c4.classList.toggle('active', frame >= step * 3);
+    }
+  });
+</script>
+</body>
+</html>
