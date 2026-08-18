@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="theme-color" content="#0A0F12">
 <title>{{ $json.nom_entreprise }} | {{ $json.metier }} à {{ $json.ville }}</title>
 <meta name="description" content="{{ $json.nom_entreprise }} est votre artisan de référence pour vos projets de {{ $json.metier }} à {{ $json.ville }} et ses environs.">
 
@@ -67,7 +68,10 @@
   /* ÉCRAN DE CHARGEMENT */
   #loader {
     position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
+    top: 0; left: 0; 
+    width: 100vw; 
+    height: 100vh;
+    height: 100dvh;
     background: var(--bg-dark);
     z-index: 99999;
     display: flex; flex-direction: column;
@@ -149,15 +153,20 @@
   }
   .sticky-wrapper {
     position: sticky; top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    width: 100vw; 
+    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
   }
   
   canvas#canvas-3d {
     position: absolute; top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    width: 100vw; 
+    height: 100vh;
+    height: 100dvh;
     display: block;
     z-index: 1;
+    will-change: transform;
   }
 
   .vignette-overlay {
@@ -190,6 +199,7 @@
     transition: opacity 1.1s cubic-bezier(0.4, 0, 0.2, 1),
                 filter 1.1s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
+    will-change: opacity, filter;
   }
   .step-card.active {
     opacity: 1;
@@ -600,11 +610,11 @@
       <form id="contact-form-dual">
         <div class="form-group">
           <label for="lead-nom">VOTRE NOM</label>
-          <input type="text" id="lead-nom" placeholder="Jean Dupont" required>
+          <input type="text" id="lead-nom" placeholder="Jean Dupont" autocomplete="name" required>
         </div>
         <div class="form-group">
           <label for="lead-tel">VOTRE TÉLÉPHONE</label>
-          <input type="text" id="lead-tel" placeholder="06 XX XX XX XX" required>
+          <input type="tel" id="lead-tel" placeholder="06 XX XX XX XX" autocomplete="tel" inputmode="tel" required>
         </div>
         <div class="form-group">
           <label for="lead-msg">VOTRE PROJET</label>
@@ -657,7 +667,10 @@
 
         fetch(WEBHOOK_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          },
           body: JSON.stringify(data)
         })
         .then(() => {
@@ -682,7 +695,10 @@
 
         fetch(WEBHOOK_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          },
           body: JSON.stringify(data)
         }).catch(() => console.log("Tracking ignoré"));
 
@@ -725,23 +741,51 @@
 
 <!-- SCRIPT MOTEUR GSAP & CANVAS -->
 <script>
-  window.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener('DOMContentLoaded', async () => {
     gsap.registerPlugin(ScrollTrigger);
 
-    const frameCount = parseInt("{{ $json.frameCount_3d }}") || 240;
-    
+    // 1. Détection Mobile / Desktop
     const checkIsMobile = () => {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
     };
+    const isMobile = checkIsMobile();
 
-    // ✅ CHEMINS RELATIFS AUTOMATIQUES VERS LE DOSSIER DU REPO
-const baseUrl = isMobile 
-  ? './public/assets/mobile/' 
-  : './public/assets/desktop/';
+    // 2. Chemins relatifs vers les assets
+    const baseUrl = isMobile 
+      ? './public/assets/mobile/' 
+      : './public/assets/desktop/';
 
-const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart(4, '0')}.webp`;
+    const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart(4, '0')}.webp`;
 
+    // 3. Détection automatique du nombre exact de frames
+    async function detectFrameCount() {
+      let low = 1, high = 500, total = 0;
+      const checkExists = async (n) => {
+        try {
+          const res = await fetch(currentFrame(n - 1), { method: 'HEAD' });
+          return res.ok;
+        } catch {
+          return false;
+        }
+      };
+
+      while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        if (await checkExists(mid)) {
+          total = mid;
+          low = mid + 1;
+        } else {
+          high = mid - 1;
+        }
+      }
+      return total > 0 ? total : 72;
+    }
+
+    const frameCount = await detectFrameCount();
+
+    // 4. Initialisation du Canvas
     const canvas = document.getElementById("canvas-3d");
+    if (!canvas) return;
     const context = canvas.getContext("2d", { alpha: false });
     
     const sequence = { frame: 0 };
@@ -849,6 +893,7 @@ const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart
       initScrollAnimation();
     }
 
+    // 5. Préchargement dynamique
     for (let i = 0; i < frameCount; i++) {
       const img = new Image();
       img.onload = handleImageLoad;
@@ -864,6 +909,7 @@ const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart
       }
     }, 6000);
 
+    // 6. Animation ScrollTrigger
     function initScrollAnimation() {
       resizeCanvas();
 
@@ -886,6 +932,7 @@ const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart
       ScrollTrigger.refresh();
     }
 
+    // 7. Synchronisation des 4 cartes textuelles
     function updateTextCards(frame) {
       const c1 = document.getElementById('card-1');
       const c2 = document.getElementById('card-2');
