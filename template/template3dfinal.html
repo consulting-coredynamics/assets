@@ -734,13 +734,12 @@
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
     };
 
-    const isMobile = checkIsMobile();
-    
-    const baseUrl = isMobile 
-      ? "{{ $json.url_3d_mobile }}" 
-      : "{{ $json.url_3d_desktop }}";
+    // ✅ CHEMINS RELATIFS AUTOMATIQUES VERS LE DOSSIER DU REPO
+const baseUrl = isMobile 
+  ? './public/assets/mobile/' 
+  : './public/assets/desktop/';
 
-    const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart(4, '0')}.webp`;
+const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart(4, '0')}.webp`;
 
     const canvas = document.getElementById("canvas-3d");
     const context = canvas.getContext("2d", { alpha: false });
