@@ -1059,16 +1059,17 @@
 
     ScrollTrigger.config({ ignoreMobileResize: true });
 
-    const frameCount = parseInt("{{ $json.frame_count || 96 }}", 10);
-    const checkIsMobile = () => window.innerWidth <= 768;
-    const isMobile = checkIsMobile();
+    // 1. Détection du nombre de frames avec fallback numérique sûr
+const rawFrames = "{{ $json.frame_count || 96 }}";
+const frameCount = parseInt(rawFrames, 10) || 96;
 
-    const baseUrl = isMobile 
-      ? './public/assets/mobile/' 
-      : './public/assets/desktop/';
+const checkIsMobile = () => window.innerWidth <= 768;
+const isMobile = checkIsMobile();
 
-    const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart(4, '0')}.webp`;
+// 2. Utilisez le même dossier si vous n'avez pas de dossier mobile dédié
+const baseUrl = './public/assets/desktop/';
 
+const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart(4, '0')}.webp`;
     const canvas = document.getElementById("canvas-3d");
     if (!canvas) return;
     const context = canvas.getContext("2d", { alpha: false });
