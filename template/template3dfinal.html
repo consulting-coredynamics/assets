@@ -1066,8 +1066,10 @@ const frameCount = parseInt(rawFrames, 10) || 96;
 const checkIsMobile = () => window.innerWidth <= 768;
 const isMobile = checkIsMobile();
 
-// 2. Utilisez le même dossier si vous n'avez pas de dossier mobile dédié
-const baseUrl = './public/assets/desktop/';
+// Sélection dynamique du dossier selon la taille de l'écran
+const baseUrl = isMobile 
+  ? './public/assets/mobile/' 
+  : './public/assets/desktop/';
 
 const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart(4, '0')}.webp`;
     const canvas = document.getElementById("canvas-3d");
