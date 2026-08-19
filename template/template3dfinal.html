@@ -1060,18 +1060,18 @@
     ScrollTrigger.config({ ignoreMobileResize: true });
 
     // 1. Détection du nombre de frames avec fallback numérique sûr
-const rawFrames = "{{ $json.frame_count || 96 }}";
-const frameCount = parseInt(rawFrames, 10) || 96;
+    const rawFrames = "{{ $json.frame_count || 96 }}";
+    const frameCount = parseInt(rawFrames, 10) || 96;
 
-const checkIsMobile = () => window.innerWidth <= 768;
-const isMobile = checkIsMobile();
+    const checkIsMobile = () => window.innerWidth <= 768;
+    const isMobile = checkIsMobile();
 
-// Sélection dynamique du dossier selon la taille de l'écran
-const baseUrl = isMobile 
-  ? './public/assets/mobile/' 
-  : './public/assets/desktop/';
+    // Sélection dynamique du dossier selon la taille de l'écran
+    const baseUrl = isMobile 
+      ? './public/assets/mobile/' 
+      : './public/assets/desktop/';
 
-const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart(4, '0')}.webp`;
+    const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart(4, '0')}.webp`;
     const canvas = document.getElementById("canvas-3d");
     if (!canvas) return;
     const context = canvas.getContext("2d", { alpha: false });
@@ -1122,29 +1122,22 @@ const currentFrame = index => `${baseUrl}frame_${(index + 1).toString().padStart
 
       let renderWidth, renderHeight;
 
-      if (isMobile) {
-        if (canvasRatio > imgRatio) {
-          renderHeight = canvas.height * 0.88;
-          renderWidth = renderHeight * imgRatio;
-        } else {
-          renderWidth = canvas.width * 0.95;
-          renderHeight = renderWidth / imgRatio;
-        }
+      // Logique "Cover" universelle : remplit 100% de l'écran en coupant ce qui dépasse
+      if (canvasRatio > imgRatio) {
+        renderWidth = canvas.width;
+        renderHeight = canvas.width / imgRatio;
       } else {
-        if (canvasRatio > imgRatio) {
-          renderWidth = canvas.width;
-          renderHeight = canvas.width / imgRatio;
-        } else {
-          renderHeight = canvas.height;
-          renderWidth = canvas.height * imgRatio;
-        }
+        renderHeight = canvas.height;
+        renderWidth = canvas.height * imgRatio;
       }
 
+      // Centrage parfait de l'image
       const x = (canvas.width - renderWidth) / 2;
       const y = (canvas.height - renderHeight) / 2;
 
       context.drawImage(img, x, y, renderWidth, renderHeight);
 
+      // Peinture du dégradé inférieur
       const zoneStart = canvas.height * (1 - TEXT_ZONE_RATIO - TEXT_ZONE_FEATHER);
       const zoneFullOpaque = canvas.height * (1 - TEXT_ZONE_RATIO);
 
